@@ -269,7 +269,7 @@ PvsGetPagingTypeFromInput(
     else if ( _stricmp( TypeInput, "paging-base-descriptor" ) == 0 ||
               _stricmp( TypeInput, "paging-base"            ) == 0 ||
               _stricmp( TypeInput, "cr3"                    ) == 0 ||
-              _stricmp( TypeInput, "pba"                    ) == 0 )
+              _stricmp( TypeInput, "pb"                     ) == 0 )
     {
         return PAGING_VISUALIZER_VALUE_TYPE_PAGING_BASE_DESCRIPTOR;
     }
