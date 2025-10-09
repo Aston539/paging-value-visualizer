@@ -14,7 +14,10 @@ Paging Value Visualizer is a small utility for decoding and visualizing values r
 
 ## Usage
 
-You can run this tool by inputting parameters into the console or via the command line as: <Type> <Value>
+You can run this tool by inputting parameters into the console or
+via the command line as: <Type> <Value>
+
+
 - Types
   - PTE( Page Table Entry )
     - page-table-entry
