@@ -14,7 +14,9 @@ Paging Value Visualizer is a small utility for decoding and visualizing values r
 
 ## Usage
 
-You can run this tool by inputting parameters into the console or via the command line as: <Type> <Value>
+You can run this tool by inputting parameters into the console or via the command line as: &lt;Type&gt; &lt;Value&gt;
+
+
 - Types
   - PTE( Page Table Entry )
     - page-table-entry
@@ -47,28 +49,28 @@ Value supports both hexadecimal and decimal formats, hexadecimal numbers must be
 
 ## Examples
 
-paging-value-visualiser virtual-address 0xfffff80000001234
+paging-value-visualiser virtual-address 0x7ff6b67840be
 ```
 Huge:
-Huge.Offset: 0000000000001234
-Huge.PDPTIndex: 0000000000000000
-Huge.PML4Index: 00000000000001F0
-Huge.Reserved: 000000000000FFFF
+Huge.Offset: 00000000367840BE
+Huge.PDPTIndex: 00000000000001DA
+Huge.PML4Index: 00000000000000FF
+Huge.Reserved: 0000000000000000
 
 Large:
-Large.Offset: 0000000000001234
-Large.PDIndex: 0000000000000000
-Large.PDPTIndex: 0000000000000000
-Large.PML4Index: 00000000000001F0
-Large.Reserved: 000000000000FFFF
+Large.Offset: 00000000001840BE
+Large.PDIndex: 00000000000001B3
+Large.PDPTIndex: 00000000000001DA
+Large.PML4Index: 00000000000000FF
+Large.Reserved: 0000000000000000
 
 Small:
-Small.Offset: 0000000000000234
-Small.PTIndex: 0000000000000001
-Small.PDIndex: 0000000000000000
-Small.PDPTIndex: 0000000000000000
-Small.PML4Index: 00000000000001F0
-Small.Reserved: 000000000000FFFF
+Small.Offset: 00000000000000BE
+Small.PTIndex: 0000000000000184
+Small.PDIndex: 00000000000001B3
+Small.PDPTIndex: 00000000000001DA
+Small.PML4Index: 00000000000000FF
+Small.Reserved: 0000000000000000
 ```
 
 paging-value-visualizer cr3 0x1ab23000
