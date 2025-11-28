@@ -11,6 +11,8 @@
 #define PAGING_VISUALIZER_VALUE_TYPE_VIRTUAL_ADDRESS 4
 #define PAGING_VISUALIZER_VALUE_TYPE_PHYSICAL_ADDRESS 5
 #define PAGING_VISUALIZER_VALUE_TYPE_PAGING_BASE_DESCRIPTOR 6
+#define PAGING_VISUALIZER_VALUE_TYPE_RFLAGS 7
+#define PAGING_VISUALIZER_VALUE_TYPE_NPT_EXITINFO 8
 
 typedef union _MM_VIRTUAL_ADDRESS
 {
@@ -223,6 +225,101 @@ typedef union _MM_PAGING_BASE_DESCRIPTOR
 
 static_assert( sizeof( MM_PAGING_BASE_DESCRIPTOR ) == sizeof( ULONG64 ), "MM_PAGING_BASE_DESCRIPTOR Must be 8 bytes" );
 
+typedef union _RFLAGS_REGISTER
+{
+	ULONG64 Value;
+
+	struct
+	{
+		ULONG64 CF : 1;  // Carry Flag
+		ULONG64 Reserved1 : 1;  // Reserved, always 1
+		ULONG64 PF : 1;  // Parity Flag
+		ULONG64 Reserved2 : 1;  // Reserved, always 0
+		ULONG64 AF : 1;  // Auxiliary Carry Flag
+		ULONG64 Reserved3 : 1;  // Reserved, always 0
+		ULONG64 ZF : 1;  // Zero Flag
+		ULONG64 SF : 1;  // Sign Flag
+		ULONG64 TF : 1;  // Trap Flag (single-step)
+		ULONG64 IF : 1;  // Interrupt Enable Flag
+		ULONG64 DF : 1;  // Direction Flag
+		ULONG64 OF : 1;  // Overflow Flag
+		ULONG64 IOPL : 2;  // I/O Privilege Level
+		ULONG64 NT : 1;  // Nested Task
+		ULONG64 Reserved4 : 1;  // Reserved
+		ULONG64 RF : 1;  // Resume Flag
+		ULONG64 VM : 1;  // Virtual-8086 Mode
+		ULONG64 AC : 1;  // Alignment Check
+		ULONG64 VIF : 1;  // Virtual Interrupt Flag
+		ULONG64 VIP : 1;  // Virtual Interrupt Pending
+		ULONG64 ID : 1;  // ID flag (for CPUID)
+		ULONG64 Reserved5 : 42; // Reserved
+	};
+
+#ifdef __cplusplus
+	FORCEINLINE operator ULONG64( ) const
+	{
+		return Value;
+	}
+
+	FORCEINLINE _RFLAGS_REGISTER& operator=( ULONG64 RFlags )
+	{
+		Value = RFlags;
+		return *this;
+	}
+
+	FORCEINLINE _RFLAGS_REGISTER( ) : Value( 0 ) { }
+	FORCEINLINE _RFLAGS_REGISTER( ULONG64 RFlags ) : Value( RFlags ) { }
+#endif
+
+} RFLAGS_REGISTER, * PRFLAGS_REGISTER;
+
+//
+// Pacifica:
+// 2.21.6 Host Versus Guest Page Faults, Fault Ordering
+// Page 81
+// 
+// AMD64 Architecture Programmers Manual:
+// 15.25.6 Nested versus Guest Page Faults, Fault Ordering
+// Page 551
+//
+typedef union _SVM_NPT_EXITINFO1
+{
+	ULONG64 Value;
+
+	struct
+	{
+		ULONG64 Valid : 1;                  // [0]
+		ULONG64 Write : 1;                  // [1]
+		ULONG64 User : 1;                   // [2]
+		ULONG64 Reserved : 1;               // [3]
+		ULONG64 Execute : 1;                // [4]
+		ULONG64 Reserved2 : 1;              // [5]
+		ULONG64 ShadowStack : 1;            // [6]
+		ULONG64 Reserved3 : 25;             // [5:31]
+		ULONG64 GuestPhysicalAddress : 1;   // [32] - 1 if nested page fault occurred while translating the guest’s final physical address
+		ULONG64 GuestPageTables : 1;        // [33] - 1 if nested page fault occurred while translating the guest page tables
+		ULONG64 Reserved4 : 3;              // [34]
+		ULONG64 SupervisorShadowStack : 1;  // [37]
+	};
+
+#ifdef __cplusplus
+	FORCEINLINE operator ULONG64( )
+	{
+		return Value;
+	}
+
+	FORCEINLINE _SVM_NPT_EXITINFO1& operator=( ULONG64 ExitInfo1 )
+	{
+		Value = ExitInfo1;
+		return *this;
+	}
+
+	FORCEINLINE _SVM_NPT_EXITINFO1( VOID ) : Value{ NULL } { }
+	FORCEINLINE _SVM_NPT_EXITINFO1( ULONG64 ExitInfo1 ) : Value{ ExitInfo1 } { }
+#endif
+
+} SVM_NPT_EXITINFO1, * PSVM_NPT_EXITINFO1;
+
 typedef struct _PAGING_VISUALIZER_INPUT_PARAMETERS
 {
 	LONG Type;
@@ -273,6 +370,15 @@ PvsGetPagingTypeFromInput(
     {
         return PAGING_VISUALIZER_VALUE_TYPE_PAGING_BASE_DESCRIPTOR;
     }
+	else if ( _stricmp( TypeInput, "rflags" ) == 0 ||
+		      _stricmp( TypeInput, "eflags" ) == 0 )
+	{
+		return PAGING_VISUALIZER_VALUE_TYPE_RFLAGS;
+	}
+	else if ( _stricmp( TypeInput, "nptinfo" ) == 0 )
+	{
+		return PAGING_VISUALIZER_VALUE_TYPE_NPT_EXITINFO;
+	}
     
 	return -1;
 }
@@ -558,6 +664,49 @@ PvsVisualizePagingBaseDescriptor(
     printf( "Reserved3: %p\n", PagingBaseDescriptor.Reserved3 );
 }
 
+VOID
+PvsVisualsizeRFlags(
+	_In_ ULONG64 Value
+)
+{
+	RFLAGS_REGISTER RFlags = Value;
+
+	printf( "RFlags.CF: %p\n", RFlags.CF );
+	printf( "RFlags.PF: %p\n", RFlags.PF );
+	printf( "RFlags.AF: %p\n", RFlags.AF );
+	printf( "RFlags.ZF: %p\n", RFlags.ZF );
+	printf( "RFlags.SF: %p\n", RFlags.SF );
+	printf( "RFlags.TF: %p\n", RFlags.TF );
+	printf( "RFlags.IF: %p\n", RFlags.IF );
+	printf( "RFlags.DF: %p\n", RFlags.DF );
+	printf( "RFlags.OF: %p\n", RFlags.OF );
+	printf( "RFlags.IOPL: %p\n", RFlags.IOPL );
+	printf( "RFlags.NT: %p\n", RFlags.NT );
+	printf( "RFlags.RF: %p\n", RFlags.RF );
+	printf( "RFlags.VM: %p\n", RFlags.VM );
+	printf( "RFlags.AC: %p\n", RFlags.AC );
+	printf( "RFlags.VIF: %p\n", RFlags.VIF );
+	printf( "RFlags.VIP: %p\n", RFlags.VIP );
+	printf( "RFlags.ID: %p\n", RFlags.ID );
+}
+
+VOID
+PvsVisualsizeNPTExitInformation(
+	_In_ ULONG64 Value
+)
+{
+	SVM_NPT_EXITINFO1 FaultInformation = Value;
+
+	printf( "FaultInformation.Valid	: %p  \n", FaultInformation.Valid );
+	printf( "FaultInformation.Write : %p  \n", FaultInformation.Write );
+	printf( "FaultInformation.User : %p  \n", FaultInformation.User );
+	printf( "FaultInformation.Execute : %p  \n", FaultInformation.Execute );
+	printf( "FaultInformation.ShadowStack : %p  \n", FaultInformation.ShadowStack );
+	printf( "FaultInformation.GuestPhysicalAddress : %p  \n", FaultInformation.GuestPhysicalAddress );
+	printf( "FaultInformation.GuestPageTables : %p  \n", FaultInformation.GuestPageTables );
+	printf( "FaultInformation.SupervisorShadowStack : %p  \n", FaultInformation.SupervisorShadowStack );
+}
+
 int main(int argc, char** argv)
 {
 	PAGING_VISUALIZER_INPUT_PARAMETERS InputParameters;
@@ -606,7 +755,24 @@ int main(int argc, char** argv)
 
         } break;
 
+		case PAGING_VISUALIZER_VALUE_TYPE_RFLAGS:
+		{
+			PvsVisualsizeRFlags( InputParameters.Value );
+
+		} break;
+
+		case PAGING_VISUALIZER_VALUE_TYPE_NPT_EXITINFO:
+		{
+			PvsVisualsizeNPTExitInformation( InputParameters.Value );
+
+		} break;
+
         default: return 2;
+    }
+
+    while ( getchar( ) != 0 )
+    {
+        Sleep( 50 );
     }
 
     return 0;
